@@ -4,6 +4,8 @@ class Plugin {
         this.btnContainer = null;
         this.modalContainer = null;
         this.consoleContainer = null;
+        this.fileManagerContainer = null;
+        this.styleElement = null;
         this.DEFAULT_BASE_URL = "https://cloud.keitodaze.net";
         this.currentFileId = null;
         this.currentProcessId = null;
@@ -17,6 +19,7 @@ class Plugin {
         this.createUI();
         this.createSettingsModal();
         this.createConsolePanel();
+        this.createFileManagerPanel();
     }
 
     async onunload() {
@@ -25,15 +28,15 @@ class Plugin {
         if (this.btnContainer) this.btnContainer.remove();
         if (this.modalContainer) this.modalContainer.remove();
         if (this.consoleContainer) this.consoleContainer.remove();
-        const style = document.getElementById('keito-deployer-style');
-        if (style) style.remove();
+        if (this.fileManagerContainer) this.fileManagerContainer.remove();
+        if (this.styleElement) this.styleElement.remove();
     }
 
     // ═══════════════════════════════════════
     //  Material 3 Light Green スタイル
     // ═══════════════════════════════════════
     applyStyles() {
-        if (document.getElementById('keito-deployer-style')) return;
+        if (this.styleElement) return;
         const css = `
             /* ── Material 3 Token ── */
             :root {
@@ -290,11 +293,134 @@ class Plugin {
                 text-align: center; padding: 24px;
                 color: var(--kc-on-surface-variant); font-size: 14px;
             }
+
+            /* ── ファイルマネージャ ウィンドウ ── */
+            .keito-filemanager {
+                position: fixed;
+                top: 50%; left: 50%;
+                transform: translate(-50%, -50%);
+                width: 520px; min-height: 300px; max-height: 80vh;
+                background: var(--kc-surface-container-low);
+                border: 1px solid var(--kc-outline-variant);
+                border-radius: var(--kc-radius-lg); z-index: 1500;
+                font-family: 'Google Sans', 'Segoe UI', system-ui, sans-serif;
+                display: none; flex-direction: column;
+                box-shadow: 0 8px 24px 4px var(--kc-shadow), 0 4px 8px 0 var(--kc-shadow);
+                resize: both; overflow: hidden;
+            }
+            .keito-fm-header {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 12px 16px;
+                background: var(--kc-surface-container);
+                border-bottom: 1px solid var(--kc-outline-variant);
+                border-radius: var(--kc-radius-lg) var(--kc-radius-lg) 0 0;
+                color: var(--kc-on-surface-variant); font-size: 14px;
+                font-weight: 500;
+                cursor: grab; user-select: none;
+            }
+            .keito-fm-header:active { cursor: grabbing; }
+            .keito-fm-header button {
+                background: none; border: none;
+                color: var(--kc-on-surface-variant);
+                cursor: pointer; font-size: 18px; padding: 4px 6px;
+                border-radius: 50%;
+                transition: background 0.15s;
+            }
+            .keito-fm-header button:hover {
+                background: var(--kc-surface-container-highest);
+            }
+            .keito-fm-toolbar {
+                display: flex; gap: 8px; padding: 10px 16px;
+                border-bottom: 1px solid var(--kc-outline-variant);
+                background: var(--kc-surface-container-low);
+                align-items: center;
+            }
+            .keito-fm-upload-btn {
+                padding: 8px 18px; border-radius: var(--kc-radius-xl);
+                border: none; cursor: pointer; font-weight: 500;
+                font-size: 13px; letter-spacing: 0.1px;
+                background: var(--kc-primary);
+                color: var(--kc-on-primary);
+                display: flex; align-items: center; gap: 6px;
+                transition: box-shadow 0.2s;
+            }
+            .keito-fm-upload-btn:hover {
+                box-shadow: 0 1px 3px 1px var(--kc-shadow);
+            }
+            .keito-fm-refresh-btn {
+                padding: 8px 14px; border-radius: var(--kc-radius-xl);
+                border: 1px solid var(--kc-outline-variant);
+                cursor: pointer; font-size: 13px; font-weight: 500;
+                background: var(--kc-surface-container);
+                color: var(--kc-on-surface-variant);
+                transition: background 0.15s;
+            }
+            .keito-fm-refresh-btn:hover {
+                background: var(--kc-surface-container-high);
+            }
+            .keito-fm-body {
+                padding: 8px 16px; overflow-y: auto; flex: 1;
+            }
+            .keito-fm-file-item {
+                display: flex; justify-content: space-between; align-items: center;
+                padding: 10px 14px; margin: 4px 0;
+                background: var(--kc-surface-container);
+                border: 1px solid var(--kc-outline-variant);
+                border-radius: var(--kc-radius-md);
+                font-size: 13px; color: var(--kc-on-surface);
+                transition: background 0.15s;
+            }
+            .keito-fm-file-item:hover {
+                background: var(--kc-surface-container-high);
+            }
+            .keito-fm-file-info {
+                display: flex; align-items: center; gap: 8px;
+                overflow: hidden; flex: 1; min-width: 0;
+            }
+            .keito-fm-file-icon { font-size: 18px; flex-shrink: 0; }
+            .keito-fm-file-name {
+                font-weight: 500; white-space: nowrap;
+                overflow: hidden; text-overflow: ellipsis;
+            }
+            .keito-fm-file-meta {
+                font-size: 11px; color: var(--kc-outline);
+                white-space: nowrap; flex-shrink: 0;
+            }
+            .keito-fm-file-actions { display: flex; gap: 6px; flex-shrink: 0; margin-left: 8px; }
+            .keito-fm-file-actions button {
+                padding: 5px 12px; border: none;
+                border-radius: var(--kc-radius-xl);
+                cursor: pointer; font-size: 12px;
+                font-weight: 500; transition: all 0.15s;
+                letter-spacing: 0.1px;
+            }
+            .keito-fm-btn-delete {
+                background: var(--kc-error-container);
+                color: var(--kc-error);
+            }
+            .keito-fm-btn-delete:hover {
+                box-shadow: 0 1px 2px 0 var(--kc-shadow);
+            }
+            .keito-fm-drop-zone {
+                border: 2px dashed var(--kc-outline-variant);
+                border-radius: var(--kc-radius-md);
+                padding: 32px; text-align: center;
+                color: var(--kc-on-surface-variant); font-size: 13px;
+                margin: 8px 0; transition: all 0.2s;
+            }
+            .keito-fm-drop-zone.drag-over {
+                border-color: var(--kc-primary);
+                background: var(--kc-primary-container);
+                color: var(--kc-on-primary-container);
+            }
+            .keito-fm-loading {
+                text-align: center; padding: 24px;
+                color: var(--kc-on-surface-variant); font-size: 13px;
+            }
         `;
-        const style = document.createElement('style');
-        style.id = 'keito-deployer-style';
-        style.textContent = css;
-        document.head.appendChild(style);
+        this.styleElement = document.createElement('style');
+        this.styleElement.textContent = css;
+        document.head.appendChild(this.styleElement);
     }
 
     // ═══════════════════════════════════════
@@ -305,11 +431,12 @@ class Plugin {
         this.btnContainer.className = 'keito-floating-panel';
 
         const buttons = [
-            { label: '⬆ アップロード', cls: 'keito-btn-deploy', action: () => this.handleDeploy() },
-            { label: '▶ 実行', cls: 'keito-btn-run', action: () => this.showRunSelector() },
-            { label: '■ 停止', cls: 'keito-btn-stop', action: () => this.showStopSelector() },
-            { label: '📋 ログ', cls: 'keito-btn-logs', action: () => this.toggleConsole() },
-            { label: '⚙', cls: 'keito-btn-config', action: () => this.openSettings() },
+            { label: '+ Upload', cls: 'keito-btn-deploy', action: () => this.handleDeploy() },
+            { label: '> Run', cls: 'keito-btn-run', action: () => this.showRunSelector() },
+            { label: '[] Stop', cls: 'keito-btn-stop', action: () => this.showStopSelector() },
+            { label: '# Log', cls: 'keito-btn-logs', action: () => this.toggleConsole() },
+            { label: '@ Files', cls: 'keito-btn-logs', action: () => this.toggleFileManager() },
+            { label: '*', cls: 'keito-btn-config', action: () => this.openSettings() },
         ];
 
         buttons.forEach(b => {
@@ -673,9 +800,9 @@ bot.run('${botToken}')
                 const fileName = f.name || f.filename || f.file_name || `File ${fileId}`;
                 listHTML += `
                     <li>
-                        <span>📄 ${fileName}</span>
+                        <span>- ${fileName}</span>
                         <div class="keito-file-actions">
-                            <button class="keito-file-btn-run" data-id="${fileId}">▶ 実行</button>
+                            <button class="keito-file-btn-run" data-id="${fileId}"> > Run</button>
                             <button class="keito-file-btn-delete" data-id="${fileId}">削除</button>
                         </div>
                     </li>
@@ -759,9 +886,9 @@ bot.run('${botToken}')
                 const statusText = p.status || p.state || 'running';
                 listHTML += `
                     <li>
-                        <span>⚙ ${procName} <span class="keito-status-badge keito-status-running">${statusText}</span></span>
+                        <span>* ${procName} <span class="keito-status-badge keito-status-running">${statusText}</span></span>
                         <div class="keito-file-actions">
-                            <button class="keito-file-btn-stop" data-id="${procId}">■ 停止</button>
+                            <button class="keito-file-btn-stop" data-id="${procId}">[] Stop</button>
                         </div>
                     </li>
                 `;
@@ -890,5 +1017,226 @@ bot.run('${botToken}')
             clearInterval(this.logInterval);
             this.logInterval = null;
         }
+    }
+
+    // ═══════════════════════════════════════
+    //  ファイルマネージャ
+    // ═══════════════════════════════════════
+    createFileManagerPanel() {
+        this.fileManagerContainer = document.createElement('div');
+        this.fileManagerContainer.className = 'keito-filemanager';
+        this.fileManagerContainer.innerHTML = `
+            <div class="keito-fm-header">
+                <span>@ File Manager</span>
+                <div>
+                    <button id="keito-fm-close" title="閉じる">✕</button>
+                </div>
+            </div>
+            <div class="keito-fm-toolbar">
+                <button class="keito-fm-upload-btn" id="keito-fm-upload-btn">+ Upload</button>
+                <button class="keito-fm-refresh-btn" id="keito-fm-refresh-btn">↻ 更新</button>
+                <input type="file" id="keito-fm-file-input" multiple style="display:none;">
+            </div>
+            <div class="keito-fm-body" id="keito-fm-body">
+                <div class="keito-fm-drop-zone" id="keito-fm-dropzone">
+                    ここにファイルをドラッグ＆ドロップ<br>
+                    またはアップロードボタンを使用
+                </div>
+                <div id="keito-fm-file-list"></div>
+            </div>
+        `;
+        document.body.appendChild(this.fileManagerContainer);
+
+        setTimeout(() => {
+            document.getElementById('keito-fm-close').onclick = () => {
+                this.fileManagerContainer.style.display = 'none';
+            };
+            document.getElementById('keito-fm-upload-btn').onclick = () => {
+                document.getElementById('keito-fm-file-input').click();
+            };
+            document.getElementById('keito-fm-file-input').onchange = (e) => {
+                if (e.target.files.length > 0) {
+                    this.uploadFilesToCloud(e.target.files);
+                    e.target.value = '';
+                }
+            };
+            document.getElementById('keito-fm-refresh-btn').onclick = () => {
+                this.refreshFileManagerList();
+            };
+            this.initFileManagerDrag();
+            this.initFileManagerDropZone();
+        }, 0);
+    }
+
+    initFileManagerDrag() {
+        const header = this.fileManagerContainer.querySelector('.keito-fm-header');
+        const panel = this.fileManagerContainer;
+        let isDragging = false;
+        let startX, startY, origX, origY;
+
+        header.addEventListener('mousedown', (e) => {
+            if (e.target.tagName === 'BUTTON') return;
+            isDragging = true;
+            startX = e.clientX;
+            startY = e.clientY;
+            const rect = panel.getBoundingClientRect();
+            panel.style.transform = 'none';
+            panel.style.left = rect.left + 'px';
+            panel.style.top = rect.top + 'px';
+            origX = rect.left;
+            origY = rect.top;
+            e.preventDefault();
+        });
+
+        document.addEventListener('mousemove', (e) => {
+            if (!isDragging) return;
+            const dx = e.clientX - startX;
+            const dy = e.clientY - startY;
+            panel.style.left = (origX + dx) + 'px';
+            panel.style.top = (origY + dy) + 'px';
+        });
+
+        document.addEventListener('mouseup', () => {
+            isDragging = false;
+        });
+    }
+
+    initFileManagerDropZone() {
+        const dropZone = document.getElementById('keito-fm-dropzone');
+        if (!dropZone) return;
+
+        ['dragenter', 'dragover'].forEach(evt => {
+            dropZone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.add('drag-over');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(evt => {
+            dropZone.addEventListener(evt, (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                dropZone.classList.remove('drag-over');
+            });
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                this.uploadFilesToCloud(files);
+            }
+        });
+    }
+
+    toggleFileManager() {
+        const isVisible = this.fileManagerContainer.style.display === 'flex';
+        this.fileManagerContainer.style.display = isVisible ? 'none' : 'flex';
+        if (!isVisible) {
+            this.refreshFileManagerList();
+        }
+    }
+
+    async uploadFilesToCloud(files) {
+        if (!this.requireConfig()) return;
+
+        for (const file of files) {
+            try {
+                this.logToConsole(`アップロード中: ${file.name} (${this.formatFileSize(file.size)})`, 'info');
+                const formData = new FormData();
+                formData.append('file', file, file.name);
+                const result = await this.apiRequest('POST', '/api/v1/files/upload', formData, true);
+                this.logToConsole(`アップロード成功: ${file.name} — ID: ${result.id}`, 'success');
+            } catch (err) {
+                this.logToConsole(`アップロード失敗 (${file.name}): ${err.message}`, 'error');
+            }
+        }
+        this.refreshFileManagerList();
+    }
+
+    async refreshFileManagerList() {
+        if (!this.requireConfig()) return;
+
+        const listEl = document.getElementById('keito-fm-file-list');
+        if (!listEl) return;
+
+        listEl.innerHTML = '<div class="keito-fm-loading">読み込み中...</div>';
+
+        try {
+            const files = await this.apiRequest('GET', '/api/v1/files');
+            const fileArray = Array.isArray(files) ? files : (files.files || files.data || []);
+
+            if (fileArray.length === 0) {
+                listEl.innerHTML = '<div class="keito-empty">ファイルがありません</div>';
+                return;
+            }
+
+            listEl.innerHTML = '';
+            fileArray.forEach(f => {
+                const fileId = f.id || f.fileId || f.file_id;
+                const fileName = f.name || f.filename || f.file_name || `File ${fileId}`;
+                const fileSize = f.size || f.file_size || null;
+                const ext = fileName.split('.').pop().toLowerCase();
+                const icon = this.getFileIcon(ext);
+
+                const item = document.createElement('div');
+                item.className = 'keito-fm-file-item';
+                item.innerHTML = `
+                    <div class="keito-fm-file-info">
+                        <span class="keito-fm-file-icon">${icon}</span>
+                        <span class="keito-fm-file-name" title="${fileName}">${fileName}</span>
+                    </div>
+                    ${fileSize ? `<span class="keito-fm-file-meta">${this.formatFileSize(fileSize)}</span>` : ''}
+                    <div class="keito-fm-file-actions">
+                        <button class="keito-fm-btn-delete" data-id="${fileId}" data-name="${fileName}">x Del</button>
+                    </div>
+                `;
+                listEl.appendChild(item);
+
+                item.querySelector('.keito-fm-btn-delete').onclick = async (e) => {
+                    const id = e.currentTarget.dataset.id;
+                    const name = e.currentTarget.dataset.name;
+                    if (confirm(`「${name}」を削除しますか？`)) {
+                        await this.deleteFileFromCloud(id, name);
+                    }
+                };
+            });
+        } catch (err) {
+            listEl.innerHTML = `<div class="keito-empty" style="color:var(--kc-error)">取得失敗: ${err.message}</div>`;
+            this.logToConsole(`ファイル一覧取得失敗: ${err.message}`, 'error');
+        }
+    }
+
+    async deleteFileFromCloud(fileId, fileName) {
+        try {
+            await this.apiRequest('DELETE', `/api/v1/files/${fileId}`);
+            this.logToConsole(`削除しました: ${fileName || fileId}`, 'success');
+            this.refreshFileManagerList();
+        } catch (err) {
+            this.logToConsole(`削除失敗 (${fileName || fileId}): ${err.message}`, 'error');
+        }
+    }
+
+    getFileIcon(ext) {
+        const icons = {
+            py: '.py', js: '.js', ts: '.ts', json: '{}', txt: '.tx',
+            md: '.md', html: '<>', css: '.cs', yml: '.ym', yaml: '.ym',
+            png: '.im', jpg: '.im', jpeg: '.im', gif: '.im', svg: '.sv',
+            zip: '.zp', tar: '.zp', gz: '.zp',
+            pdf: '.pd', csv: '.cv', xml: '.xm',
+        };
+        return icons[ext] || '--';
+    }
+
+    formatFileSize(bytes) {
+        if (!bytes || bytes === 0) return '0 B';
+        const units = ['B', 'KB', 'MB', 'GB'];
+        let i = 0;
+        let size = bytes;
+        while (size >= 1024 && i < units.length - 1) {
+            size /= 1024;
+            i++;
+        }
+        return `${size.toFixed(i === 0 ? 0 : 1)} ${units[i]}`;
     }
 }

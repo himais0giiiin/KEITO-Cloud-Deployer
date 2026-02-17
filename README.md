@@ -1,6 +1,6 @@
-EDBPから、KEITO Cloud APIを利用してPythonコードのアップロード・実行・ログ確認・プロセス管理までを行えるプラグインです。
+# EDBPから、KEITO Cloud APIを利用してPythonコードのアップロード・実行・ログ確認・プロセス管理までを行えるプラグインです。
 
-KEITO Cloud API keyの作成方法
+### KEITO Cloud API keyの作成方法
 
 1 Discord SERVERに参加
 
@@ -11,7 +11,7 @@ https://keitodaze.net/discord
 3 Dashboardページが開けたら APIを押して、APIキーをコピーします
 
 
-API KEYの設定方法
+### API KEYの設定方法
 
 まず、プラグインをインストールしてください
 
