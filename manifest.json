@@ -1,7 +1,7 @@
 {
     "id": "keitocloud-deployer",
     "name": "KEITO Cloud Deployer",
-    "version": "3.2.0",
+    "version": "3.3.0",
     "author": ".KEITO",
     "description": "生成したPythonコードをKEITO Cloud APIにアップロード・実行し、ログ確認やプロセス管理まで行えるプラグインです。",
     "tags": [
@@ -17,5 +17,5 @@
         "name": "KEITO Cloud API",
         "baseUrl": "https://cloud.keitodaze.net"
     },
-    "minAppVersion": "1.1.0"
+    "minAppVersion": "1.0.0"
 }
