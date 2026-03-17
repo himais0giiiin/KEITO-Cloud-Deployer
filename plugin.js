@@ -6,7 +6,7 @@ class Plugin {
         this.consoleContainer = null;
         this.fileManagerContainer = null;
         this.styleElement = null;
-        this.DEFAULT_BASE_URL = "https://cloud.keitodaze.net";
+        this.DEFAULT_BASE_URL = "https://keitocloud.jp/";
         this.currentFileId = null;
         this.currentProcessId = null;
         this.logInterval = null;
@@ -457,7 +457,7 @@ class Plugin {
             <div class="keito-modal">
                 <h3>接続設定</h3>
                 <label>Base URL</label>
-                <input type="text" id="keito-url" class="keito-input" placeholder="https://cloud.keitodaze.net">
+                <input type="text" id="keito-url" class="keito-input" placeholder="https://keitocloud.jp">
                 <label>API Key</label>
                 <input type="password" id="keito-key" class="keito-input" placeholder="kc_xxxxxxxx...">
                 <hr class="keito-divider">
